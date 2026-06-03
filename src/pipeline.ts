@@ -7,6 +7,7 @@ import { assessWebsite } from './enrich/websiteCheck.js';
 import { findEmail } from './enrich/emailFinder.js';
 import { generateDemo } from './demo/generator.js';
 import { sendOutreach } from './outreach/sender.js';
+import { suppression } from './suppression.js';
 
 export interface RunSummary {
   discovered: number;
@@ -77,6 +78,14 @@ export async function runPipeline(limit = config.dailyLimit): Promise<RunSummary
     }
     store.upsert({ id: lead.id, email });
 
+    // Never contact a suppressed/unsubscribed address.
+    if (suppression.isSuppressed(email)) {
+      store.upsert({ id: lead.id, emailStatus: 'skipped', notes: 'suppressed' });
+      summary.skippedNoEmail++;
+      log.warn('  ↳ email is on the suppression list — skipping');
+      continue;
+    }
+
     // 3. Build the demo.
     const demo = await generateDemo({ ...lead, email });
     store.upsert({ id: lead.id, demoPath: demo.path, demoUrl: demo.url });
@@ -86,11 +95,14 @@ export async function runPipeline(limit = config.dailyLimit): Promise<RunSummary
     // 4. Send / queue the outreach email.
     const current = store.get(lead.id)!;
     const result = await sendOutreach(current);
+    const contacted = result.status === 'sent' || result.status === 'dryrun';
     store.upsert({
       id: lead.id,
       emailStatus: result.status,
       emailSubject: result.subject,
       emailSentAt: result.status === 'sent' ? new Date().toISOString() : null,
+      lastContactedAt: contacted ? new Date().toISOString() : null,
+      followUpCount: 0,
     });
     if (result.status === 'sent') summary.emailsSent++;
     if (result.status === 'dryrun') summary.dryRun++;

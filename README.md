@@ -7,10 +7,15 @@ offering to make it real.
 
 ```
 discover → de-dupe → score website → find email → build demo → send outreach
+                                                         ↓
+              host demo + unsubscribe page  ←  built-in web server
+                                                         ↓
+            follow-up sequence  ·  reply detection  ·  suppression list
 ```
 
 Built with Node.js + TypeScript. Modular, so each stage can be swapped or scaled
-independently.
+independently. A built-in web server hosts every generated demo at a unique URL
+and powers the one-click unsubscribe page.
 
 ---
 
@@ -51,11 +56,20 @@ With no API keys, it runs on **built-in sample businesses** and saves demo sites
 - Demos → `data/demos/<id>/index.html`
 - Emails → `data/outbox/<id>.html`
 
-Then inspect results:
+Serve the demos + unsubscribe page (each demo gets a unique URL at `/d/<id>/`):
 
 ```bash
-npm run list     # table of all leads
-npm run stats    # counts by status
+npm run serve            # http://localhost:8787
+```
+
+Then inspect results and run the rest of the lifecycle:
+
+```bash
+npm run list                  # table of all leads
+npm run stats                 # counts by status (sent/replied/unsubscribed…)
+npm run followup -- --force   # send the next follow-up (--force ignores the wait)
+npm run check-replies         # scan inbox, mark replies, honor opt-out replies
+npm start -- suppress a@b.com # manually add to the do-not-contact list
 ```
 
 ---
@@ -66,11 +80,28 @@ npm run stats    # counts by status
    `SEARCH_QUERIES` and `SEARCH_LOCATION`.
 2. **(Optional) Anthropic key** for AI-written copy → `ANTHROPIC_API_KEY`.
    Without it, tasteful per-category templates are used (zero AI cost).
-3. **Host the demos** somewhere public (Netlify drop, S3, a cheap VPS) and set
-   `DEMO_BASE_URL` so the email can link to each demo.
+3. **Expose the server**: run `npm run serve` on a box with a public URL and set
+   `PUBLIC_BASE_URL=https://leads.yourdomain.com`. Demos are then live at
+   `<base>/d/<id>/` and the unsubscribe page at `<base>/u`. Set a strong
+   `UNSUB_SECRET`. (Host demos elsewhere? set `DEMO_BASE_URL` instead.)
 4. **Configure email**: `SMTP_*`, `EMAIL_FROM`, and the CAN-SPAM fields.
+   For reply detection, also set `IMAP_ENABLED=true` + `IMAP_*`.
 5. **Flip the switch**: `DRY_RUN=false` and `EMAIL_ENABLED=true`.
-6. **Schedule it**: `npm run schedule` (daily cron; keep alive with pm2/systemd/Docker).
+6. **Schedule it**: `npm run schedule` — one daemon that hosts the server AND
+   runs the daily discovery, the follow-up pass, and inbox scans on cron
+   (`SCHEDULE_CRON` / `FOLLOWUP_CRON` / `REPLIES_CRON`). Keep alive with
+   pm2/systemd/Docker.
+
+### The full lifecycle, automated
+
+- **Hosting** — every demo is instantly live at a unique, unguessable URL.
+- **Follow-ups** — `FOLLOWUP_MAX` polite nudges, `FOLLOWUP_DELAY_DAYS` apart,
+  automatically stopped once someone replies or unsubscribes.
+- **Reply detection** — IMAP scan marks leads `replied` (so they drop out of the
+  follow-up queue) and auto-suppresses anyone who replies "unsubscribe/stop".
+- **Suppression list** — the authoritative do-not-contact gate, checked before
+  every send. Fed by the unsubscribe page (signed, per-recipient links),
+  opt-out replies, and manual `suppress` commands.
 
 ---
 
@@ -80,13 +111,16 @@ npm run stats    # counts by status
 src/
   config.ts            env-driven config (safe defaults)
   pipeline.ts          orchestrator — one full pass
-  cli.ts               run / list / stats commands
-  scheduler.ts         daily cron runner
+  cli.ts               run / serve / followup / check-replies / list / stats
+  scheduler.ts         all-in-one daemon: server + daily cron jobs
+  server.ts            hosts demos (/d/<id>/), unsubscribe (/u), open pixel
+  suppression.ts       do-not-contact list + signed unsubscribe tokens
   db.ts                JSON lead store (swap for SQLite/Postgres later)
   sources/             discovery: Google Places (+ sample fallback)
   enrich/              websiteCheck (need score) + emailFinder
   demo/                ai (copy) + template (HTML) + generator
-  outreach/            emailTemplate (CAN-SPAM) + sender (SMTP/dry-run)
+  outreach/            emailTemplate (CAN-SPAM) + sender + followup sequence
+  inbox/               imap reply detection + opt-out handling
 ```
 
 ## How "needs a website" is scored
@@ -98,8 +132,13 @@ social-media page. Score < 60 → it becomes a target.
 
 ## Roadmap ideas
 
-- Reply detection + automated follow-up sequence (IMAP/webhook).
-- One-click demo hosting (auto-deploy each demo, unique URL).
-- A/B subject lines + open/click tracking.
-- CRM export, dedupe across runs, suppression list wired to unsubscribes.
-- Richer demos (pull the business's real photos/menu).
+Done: ✅ demo hosting · ✅ follow-up sequence · ✅ reply detection ·
+✅ suppression list wired to unsubscribes · ✅ open tracking.
+
+Next:
+
+- A/B subject lines + click tracking + open-rate reporting.
+- Richer demos (pull the business's real photos/menu/hours).
+- Move the JSON store to SQLite/Postgres for concurrent server + cron access.
+- CRM export / webhook on reply.
+- Per-domain send throttling + automatic warm-up ramp.

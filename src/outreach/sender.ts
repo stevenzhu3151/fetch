@@ -4,7 +4,8 @@ import nodemailer from 'nodemailer';
 import type { Lead, EmailStatus } from '../types.js';
 import { config } from '../config.js';
 import { log } from '../logger.js';
-import { composeEmail } from './emailTemplate.js';
+import { suppression, unsubscribeUrl } from '../suppression.js';
+import { composeInitial, type ComposedEmail } from './emailTemplate.js';
 
 export interface SendResult {
   status: EmailStatus;
@@ -25,29 +26,37 @@ function getTransport() {
 }
 
 /**
- * Send (or, in dry-run, save) the outreach email for a lead.
- *
- * Safety: defaults to DRY-RUN, which writes the rendered email to data/outbox/
- * so you can review every message before a single one is actually sent.
+ * Deliver a composed email to a lead. The single choke point for sending:
+ *   1. never sends to a suppressed/unsubscribed address,
+ *   2. in DRY-RUN, writes the message to data/outbox/ for review,
+ *   3. otherwise sends via SMTP with a per-recipient one-click unsubscribe header.
+ * `tag` distinguishes outbox files (e.g. "followup1").
  */
-export async function sendOutreach(lead: Lead): Promise<SendResult> {
+export async function deliver(
+  lead: Lead,
+  email: ComposedEmail,
+  tag = 'initial',
+): Promise<SendResult> {
   if (!lead.email) return { status: 'skipped', subject: '' };
 
-  const email = composeEmail(lead);
+  if (suppression.isSuppressed(lead.email)) {
+    log.warn(`  ↳ ${lead.email} is on the suppression list — not sending`);
+    return { status: 'skipped', subject: email.subject };
+  }
 
-  // DRY-RUN: write to outbox instead of sending.
   if (config.email.dryRun || !config.email.enabled) {
     const dir = join('data', 'outbox');
     mkdirSync(dir, { recursive: true });
     writeFileSync(
-      join(dir, `${lead.id}.html`),
+      join(dir, `${lead.id}.${tag}.html`),
       `<!-- To: ${lead.email} | Subject: ${email.subject} -->\n${email.html}`,
     );
-    log.info(`  ↳ [dry-run] email for ${lead.name} saved to outbox (would send to ${lead.email})`);
+    log.info(`  ↳ [dry-run] ${tag} email for ${lead.name} → outbox (to ${lead.email})`);
     return { status: 'dryrun', subject: email.subject };
   }
 
   try {
+    const unsub = unsubscribeUrl(lead.email);
     await getTransport().sendMail({
       from: config.email.from,
       to: lead.email,
@@ -56,14 +65,21 @@ export async function sendOutreach(lead: Lead): Promise<SendResult> {
       text: email.text,
       html: email.html,
       headers: {
-        // One-click unsubscribe header — strongly recommended for deliverability.
-        'List-Unsubscribe': `<${config.sender.unsubscribeUrl}>`,
+        // RFC 8058 one-click unsubscribe — big deliverability win.
+        'List-Unsubscribe': `<${unsub}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       },
     });
-    log.ok(`  ↳ email sent to ${lead.email}`);
+    log.ok(`  ↳ ${tag} email sent to ${lead.email}`);
     return { status: 'sent', subject: email.subject };
   } catch (err) {
     log.error(`  ↳ send failed for ${lead.email}: ${(err as Error).message}`);
     return { status: 'failed', subject: email.subject };
   }
+}
+
+/** Compose + deliver the first-touch outreach email. */
+export async function sendOutreach(lead: Lead): Promise<SendResult> {
+  if (!lead.email) return { status: 'skipped', subject: '' };
+  return deliver(lead, composeInitial(lead), 'initial');
 }

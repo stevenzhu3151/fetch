@@ -32,6 +32,11 @@ export interface Lead {
   emailStatus?: EmailStatus;
   emailSubject?: string | null;
   emailSentAt?: string | null;
+  lastContactedAt?: string | null;
+  followUpCount?: number; // number of follow-ups sent after the first email
+  openedAt?: string | null;
+  repliedAt?: string | null;
+  unsubscribedAt?: string | null;
 
   createdAt: string;
   updatedAt: string;
