@@ -1,0 +1,31 @@
+{
+  "name": "leadgen-fetch",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Daily lead-gen pipeline: discover small businesses that need a website, generate a demo for each, and send a compliant outreach email.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "run:once": "tsx src/cli.ts run",
+    "list": "tsx src/cli.ts list",
+    "stats": "tsx src/cli.ts stats",
+    "schedule": "tsx src/scheduler.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.14"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.15",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}

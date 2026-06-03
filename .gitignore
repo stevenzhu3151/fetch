@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.local
+dist/
+
+# Runtime data: leads DB, generated demos, and the email outbox.
+# Keep these local — they may contain scraped personal data (emails, addresses).
+data/leads.json
+data/demos/
+data/outbox/
+*.log
