@@ -66,10 +66,18 @@ export const config = {
   },
 
   sender: {
-    businessName: process.env.SENDER_BUSINESS_NAME ?? 'Acme Web Studio',
+    businessName: process.env.SENDER_BUSINESS_NAME ?? 'StanAlpha',
     physicalAddress:
       process.env.SENDER_ADDRESS ?? '123 Main St, Austin, TX 78701, USA',
     calendarUrl: process.env.CALENDAR_URL ?? 'https://calendly.com/you/15min',
+  },
+
+  // Pitch + pricing used in the outreach email. Below-market intro pricing is
+  // the hook; the free demo is just a taste of the fully custom build.
+  offer: {
+    introPrice: process.env.OFFER_INTRO_PRICE ?? '$399',
+    marketPrice: process.env.OFFER_MARKET_PRICE ?? '$1,500+',
+    monthly: process.env.OFFER_MONTHLY ?? '$29/mo',
   },
 };
 

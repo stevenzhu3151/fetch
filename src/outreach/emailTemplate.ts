@@ -34,35 +34,50 @@ function trackingPixel(lead: Lead): string {
 /** The first-touch outreach email: demo link + offer + clear next step. */
 export function composeInitial(lead: Lead): ComposedEmail {
   const demoLink = lead.demoUrl ?? '(host the demo and set PUBLIC_BASE_URL/DEMO_BASE_URL)';
-  const reason = lead.needReasons?.[0] ?? 'a fresh, modern look';
+  const reason = lead.needReasons?.[0] ?? 'a fresher, more modern look';
   const { businessName, calendarUrl } = config.sender;
+  const { introPrice, marketPrice, monthly } = config.offer;
   const foot = footer(lead.email!);
 
-  const subject = `A free website concept for ${lead.name}`;
+  const subject = `A free website concept we made for ${lead.name}`;
 
   const text = `Hi ${lead.name} team,
 
-I'm an independent web designer in the area. I came across ${lead.name} and noticed your online presence could use ${reason} — so I went ahead and built you a free concept site to show what's possible:
+My name's from ${businessName} — we're a small web design studio (a startup, honestly), and we're building our portfolio with a handful of standout local businesses.
+
+We came across ${lead.name} and felt your site could use ${reason}, so rather than just pitch you, we went ahead and designed a free concept site for you. Here it is, no strings attached:
 
 ${demoLink}
 
-No obligation at all — it's yours to look at. If you like it, I can have a polished version live for you quickly. My intro offer for local businesses is a complete, mobile-friendly site with everything set up.
+To be clear: this is just a quick concept to show direction. If you'd like to move forward, we build you a fully custom, polished production site — your real photos, menu, hours, online booking, Google/SEO setup, the works — far beyond what this preview shows.
 
-Want to chat for 15 minutes? Grab a time here: ${calendarUrl}
-Or just reply to this email.
+Because we're young and growing, our intro pricing is well below market:
+  • Complete custom website: ${introPrice} (comparable studios charge ${marketPrice})
+  • Optional hosting, updates & support: ${monthly}
 
-Cheers,
-${businessName}${foot.text}`;
+If the concept resonates, just reply and we'll take it from there — or grab 15 minutes here: ${calendarUrl}
 
-  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1c1c1c;line-height:1.6;">
+Either way, the concept is yours to keep. Thanks for the great work you do locally.
+
+Warm regards,
+The ${businessName} team${foot.text}`;
+
+  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1c1c1c;line-height:1.65;">
   <p>Hi ${escapeHtml(lead.name)} team,</p>
-  <p>I'm an independent web designer in the area. I came across <b>${escapeHtml(lead.name)}</b> and noticed your online presence could use ${escapeHtml(reason)} — so I went ahead and built you a <b>free concept site</b> to show what's possible:</p>
+  <p>My name's from <b>${escapeHtml(businessName)}</b> — we're a small web design studio (a startup, honestly), and we're building our portfolio with a handful of standout local businesses.</p>
+  <p>We came across <b>${escapeHtml(lead.name)}</b> and felt your site could use ${escapeHtml(reason)}, so rather than just pitch you, we went ahead and designed a <b>free concept site</b> for you. Here it is, no strings attached:</p>
   <p style="text-align:center;margin:28px 0;">
-    <a href="${escapeAttr(lead.demoUrl ?? '#')}" style="background:#e08a3c;color:#111;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;">👀 View your free concept site</a>
+    <a href="${escapeAttr(lead.demoUrl ?? '#')}" style="background:#e08a3c;color:#111;font-weight:700;padding:14px 30px;border-radius:8px;text-decoration:none;font-size:16px;">👀 View your free concept site</a>
   </p>
-  <p>No obligation at all — it's yours to look at. If you like it, I can have a polished version live for you quickly. My intro offer for local businesses is a complete, mobile-friendly site with everything set up.</p>
-  <p>Want to chat for 15 minutes? <a href="${escapeAttr(calendarUrl)}">Grab a time here</a>, or just reply to this email.</p>
-  <p>Cheers,<br/>${escapeHtml(businessName)}</p>
+  <p>To be clear: this is just a quick concept to show direction. If you'd like to move forward, we build you a <b>fully custom, polished production site</b> — your real photos, menu, hours, online booking, Google/SEO setup, the works — far beyond what this preview shows.</p>
+  <p>Because we're young and growing, our intro pricing is <b>well below market</b>:</p>
+  <ul style="line-height:1.8;">
+    <li>Complete custom website: <b>${escapeHtml(introPrice)}</b> <span style="color:#888;">(comparable studios charge ${escapeHtml(marketPrice)})</span></li>
+    <li>Optional hosting, updates &amp; support: <b>${escapeHtml(monthly)}</b></li>
+  </ul>
+  <p>If the concept resonates, just reply and we'll take it from there — or <a href="${escapeAttr(calendarUrl)}">grab 15 minutes here</a>.</p>
+  <p>Either way, the concept is yours to keep. Thanks for the great work you do locally.</p>
+  <p>Warm regards,<br/>The ${escapeHtml(businessName)} team</p>
   ${foot.html}
   ${trackingPixel(lead)}
 </div>`;
