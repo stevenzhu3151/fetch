@@ -5,6 +5,7 @@ import { LeadStore } from '../db.js';
 import { suppression } from '../suppression.js';
 import { type ComposedEmail, footer, escapeHtml, escapeAttr } from './emailTemplate.js';
 import { deliver } from './sender.js';
+import { assertSendConfig } from '../preflight.js';
 
 /** Build the Nth follow-up (step 1 = first nudge). Kept short and polite. */
 export function composeFollowUp(lead: Lead, step: number): ComposedEmail {
@@ -42,7 +43,7 @@ Just bumping this up in case it got buried — I built ${lead.name} a free websi
 
 ${demoLink}
 
-Happy to tweak anything or hop on a quick 15-min call: ${calendarUrl}
+Happy to tweak anything${calendarUrl ? ` or hop on a quick 15-min call: ${calendarUrl}` : ' — just hit reply'}.
 
 Cheers,
 ${businessName}${foot.text}`;
@@ -50,7 +51,7 @@ ${businessName}${foot.text}`;
   <p>Hi,</p>
   <p>Just bumping this up in case it got buried — I built <b>${escapeHtml(lead.name)}</b> a free website concept and wanted to make sure you saw it:</p>
   <p style="text-align:center;margin:24px 0;"><a href="${escapeAttr(lead.demoUrl ?? '#')}" style="background:#e08a3c;color:#111;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;">👀 View your concept site</a></p>
-  <p>Happy to tweak anything or hop on a quick <a href="${escapeAttr(calendarUrl)}">15-min call</a>.</p>
+  <p>Happy to tweak anything${calendarUrl ? ` or hop on a quick <a href="${escapeAttr(calendarUrl)}">15-min call</a>` : ' — just hit reply'}.</p>
   <p>Cheers,<br/>${escapeHtml(businessName)}</p>
   ${foot.html}
 </div>`;
@@ -63,6 +64,7 @@ ${businessName}${foot.text}`;
  * `force` ignores the delay (handy for testing).
  */
 export async function runFollowUps(force = false): Promise<{ sent: number; checked: number }> {
+  assertSendConfig();
   const store = new LeadStore();
   const now = Date.now();
   const delayMs = config.followup.delayDays * 24 * 60 * 60 * 1000;

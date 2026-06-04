@@ -14,7 +14,11 @@ export const escapeAttr = (s: string) => escapeHtml(s).replace(/"/g, '&quot;');
 
 /** CAN-SPAM-required footer: real postal address + per-recipient unsubscribe. */
 export function footer(email: string): { text: string; html: string } {
-  const { businessName, physicalAddress } = config.sender;
+  const { businessName } = config.sender;
+  // Real address required by law before sending; flag it loudly if missing
+  // (only ever visible in dry-run, since real sends are blocked without it).
+  const physicalAddress =
+    config.sender.physicalAddress || '[⚠ SET SENDER_ADDRESS — a real postal address is required by law]';
   const unsub = unsubscribeUrl(email);
   return {
     text: `\n\n---\n${businessName} · ${physicalAddress}\nDon't want these emails? Unsubscribe: ${unsub}`,
@@ -55,7 +59,9 @@ Because we're young and growing, our intro pricing is well below market:
   • Complete custom website: ${introPrice} (comparable studios charge ${marketPrice})
   • Optional hosting, updates & support: ${monthly}
 
-If the concept resonates, just reply and we'll take it from there — or grab 15 minutes here: ${calendarUrl}
+If the concept resonates, just reply to this email and we'll take it from there${
+    calendarUrl ? ` — or grab 15 minutes here: ${calendarUrl}` : ''
+  }.
 
 Either way, the concept is yours to keep. Thanks for the great work you do locally.
 
@@ -75,7 +81,9 @@ The ${businessName} team${foot.text}`;
     <li>Complete custom website: <b>${escapeHtml(introPrice)}</b> <span style="color:#888;">(comparable studios charge ${escapeHtml(marketPrice)})</span></li>
     <li>Optional hosting, updates &amp; support: <b>${escapeHtml(monthly)}</b></li>
   </ul>
-  <p>If the concept resonates, just reply and we'll take it from there — or <a href="${escapeAttr(calendarUrl)}">grab 15 minutes here</a>.</p>
+  <p>If the concept resonates, just reply to this email and we'll take it from there${
+    calendarUrl ? ` — or <a href="${escapeAttr(calendarUrl)}">grab 15 minutes here</a>` : ''
+  }.</p>
   <p>Either way, the concept is yours to keep. Thanks for the great work you do locally.</p>
   <p>Warm regards,<br/>The ${escapeHtml(businessName)} team</p>
   ${foot.html}

@@ -54,7 +54,7 @@ export const config = {
     port: Number(process.env.SMTP_PORT ?? 587),
     user: process.env.SMTP_USER ?? '',
     pass: process.env.SMTP_PASS ?? '',
-    from: process.env.EMAIL_FROM ?? 'Your Name <you@example.com>',
+    from: process.env.EMAIL_FROM ?? '', // must be a real address on your domain
     replyTo: process.env.EMAIL_REPLY_TO ?? '',
   },
 
@@ -70,9 +70,10 @@ export const config = {
 
   sender: {
     businessName: process.env.SENDER_BUSINESS_NAME ?? 'StanAlpha',
-    physicalAddress:
-      process.env.SENDER_ADDRESS ?? '123 Main St, Austin, TX 78701, USA',
-    calendarUrl: process.env.CALENDAR_URL ?? 'https://calendly.com/you/15min',
+    // REAL postal address only — legally required by CAN-SPAM. No fake default.
+    physicalAddress: process.env.SENDER_ADDRESS ?? '',
+    // Optional. If empty, the email simply omits the booking link.
+    calendarUrl: process.env.CALENDAR_URL ?? '',
   },
 
   // Pitch + pricing used in the outreach email. Below-market intro pricing is

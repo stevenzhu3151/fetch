@@ -8,6 +8,7 @@ import { findEmail } from './enrich/emailFinder.js';
 import { generateDemo } from './demo/generator.js';
 import { sendOutreach } from './outreach/sender.js';
 import { suppression } from './suppression.js';
+import { assertSendConfig } from './preflight.js';
 
 export interface RunSummary {
   discovered: number;
@@ -26,6 +27,7 @@ export interface RunSummary {
  * Only brand-new leads (not already in the store) are processed, up to `limit`.
  */
 export async function runPipeline(limit = config.dailyLimit): Promise<RunSummary> {
+  assertSendConfig(); // refuse real sends with fake/missing address etc.
   const store = new LeadStore();
   const summary: RunSummary = {
     discovered: 0,
