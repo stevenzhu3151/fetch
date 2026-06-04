@@ -11,7 +11,10 @@ export const config = {
   dailyLimit: Number(process.env.DAILY_LIMIT ?? 100),
 
   search: {
-    queries: (process.env.SEARCH_QUERIES ?? 'coffee shop,restaurant,bakery,boutique')
+    queries: (
+      process.env.SEARCH_QUERIES ??
+      'cafe,coffee shop,nail salon,massage spa,cat cafe,barber shop,beauty salon,small restaurant,juice bar,florist'
+    )
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
@@ -75,9 +78,9 @@ export const config = {
   // Pitch + pricing used in the outreach email. Below-market intro pricing is
   // the hook; the free demo is just a taste of the fully custom build.
   offer: {
-    introPrice: process.env.OFFER_INTRO_PRICE ?? '$399',
-    marketPrice: process.env.OFFER_MARKET_PRICE ?? '$1,500+',
-    monthly: process.env.OFFER_MONTHLY ?? '$29/mo',
+    introPrice: process.env.OFFER_INTRO_PRICE ?? '$99',
+    marketPrice: process.env.OFFER_MARKET_PRICE ?? '$800+',
+    monthly: process.env.OFFER_MONTHLY ?? '$19/mo',
   },
 };
 

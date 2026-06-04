@@ -73,7 +73,12 @@ export function verifyUnsubToken(email: string, token: string): boolean {
   return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
 }
 
+/** Returns a signed URL when the server is configured, otherwise a mailto fallback. */
 export function unsubscribeUrl(email: string): string {
-  const e = Buffer.from(norm(email)).toString('base64url');
-  return `${config.server.baseUrl}/u?e=${e}&t=${unsubToken(email)}`;
+  if (process.env.PUBLIC_BASE_URL) {
+    const e = Buffer.from(norm(email)).toString('base64url');
+    return `${config.server.baseUrl}/u?e=${e}&t=${unsubToken(email)}`;
+  }
+  // No public server: CAN-SPAM-compliant reply-based opt-out.
+  return `mailto:${config.email.from.replace(/.*<(.+)>/, '$1')}?subject=UNSUBSCRIBE`;
 }

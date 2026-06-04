@@ -33,7 +33,7 @@ function trackingPixel(lead: Lead): string {
 
 /** The first-touch outreach email: demo link + offer + clear next step. */
 export function composeInitial(lead: Lead): ComposedEmail {
-  const demoLink = lead.demoUrl ?? '(host the demo and set PUBLIC_BASE_URL/DEMO_BASE_URL)';
+  const demoLink = lead.demoUrl ?? '(reply and we\'ll send you a private preview link)';
   const reason = lead.needReasons?.[0] ?? 'a fresher, more modern look';
   const { businessName, calendarUrl } = config.sender;
   const { introPrice, marketPrice, monthly } = config.offer;
